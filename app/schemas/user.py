@@ -30,3 +30,9 @@ class UserOut(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+
+class UserUpdate(BaseModel):
+    email: str | None = None
+    phone_number: str | None = None
+    address: str | None = None

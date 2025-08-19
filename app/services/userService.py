@@ -4,6 +4,7 @@ from ..schemas.user import UserCreate, UserLogin
 from ..models.user import User
 from ..database.db import get_session
 from ..auth.hash_jwt import hashed_password, verify_password, create_access_token
+from ..auth.mail import send_login_mail, send_register_mail
 
 
 # Register:-------------------
@@ -31,6 +32,9 @@ async def create_user(user: UserCreate, session: Session = Depends(get_session))
         role=user.role,
     )
 
+    # Send email after register
+    await send_register_mail(email=db_user.email, name=db_user.name)
+
     session.add(db_user)
     session.commit()
     session.refresh(db_user)
@@ -47,6 +51,9 @@ async def login_user(user: UserLogin, session: Session = Depends(get_session)):
     ):
         raise HTTPException(status_code=400, detail="Invalid Credentials")
 
+    # Send email after login
+    await send_login_mail(email=existing_user.email, name=existing_user.name)
+
     # Create token
     token = create_access_token({"sub": existing_user.name})
     return {
@@ -55,3 +62,34 @@ async def login_user(user: UserLogin, session: Session = Depends(get_session)):
         "access_token": token,
         "token_type": "Bearer",
     }
+
+
+# Profile Update:-------------------
+async def update_user_profile(
+    user_id: int,
+    email: str = None,
+    phone_number: str = None,
+    address: str = None,
+    session: Session = Depends(get_session),
+):
+    db_user = session.get(User, user_id)
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if email and email != db_user.email:
+        check_email = select(User).where(User.email == email)
+        existing_email = session.exec(check_email).first()
+        if existing_email:
+            raise HTTPException(status_code=400, detail="Email already exists")
+        db_user.email = email
+
+    if phone_number:
+        db_user.phone_number = phone_number
+
+    if address:
+        db_user.address = address
+
+    session.add(db_user)
+    session.commit()
+    session.refresh(db_user)
+    return db_user
