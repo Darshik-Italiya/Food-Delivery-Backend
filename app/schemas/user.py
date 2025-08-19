@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from typing import Optional
 from ..models.user import User_Roles
@@ -6,7 +6,7 @@ from ..models.user import User_Roles
 
 class UserCreate(BaseModel):
     name: str
-    email: str
+    email: EmailStr
     password: str
     phone_number: Optional[str] = None
     address: Optional[str] = None
@@ -16,7 +16,7 @@ class UserCreate(BaseModel):
 class UserOut(BaseModel):
     id: int
     name: str
-    email: str
+    email: EmailStr
     phone_number: Optional[str]
     address: Optional[str]
     role: User_Roles
@@ -25,3 +25,8 @@ class UserOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
