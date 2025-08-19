@@ -13,7 +13,15 @@ async def create_user(user: UserCreate, session: Session = Depends(get_session))
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already exists")
 
-    hash_pass = await hashed_password(user.password)
+    # Only one admin logic
+    if user.role == "admin":
+        check_admin = select(User).where(User.role == user.role == "admin")
+        existing_admin = session.exec(check_admin).first()
+        if existing_admin:
+            raise HTTPException(status_code=400, detail="Admin already exists!")
+
+    # Hash Password
+    hash_pass = hashed_password(user.password)
     db_user = User(
         name=user.name,
         email=user.email,
@@ -41,4 +49,9 @@ async def login_user(user: UserLogin, session: Session = Depends(get_session)):
 
     # Create token
     token = create_access_token({"sub": existing_user.name})
-    return {"access_token": token, "token_type": "Bearer"}
+    return {
+        "login user": existing_user.name,
+        "role": existing_user.role,
+        "access_token": token,
+        "token_type": "Bearer",
+    }
