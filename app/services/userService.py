@@ -1,0 +1,28 @@
+from fastapi import Depends, HTTPException
+from sqlmodel import Session, select
+from ..schemas.user import UserCreate
+from ..models.user import User
+from ..database.db import get_session
+from ..auth.hash_jwt import hashed_password
+
+
+async def create_user(user: UserCreate, session: Session = Depends(get_session)):
+    check_email = select(User).where(User.email == user.email)
+    existing_user = session.exec(check_email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already exists")
+
+    hash_pass = await hashed_password(user.password)
+    db_user = User(
+        name=user.name,
+        email=user.email,
+        password_hash=hash_pass,
+        phone_number=user.phone_number,
+        address=user.address,
+        role=user.role,
+    )
+
+    session.add(db_user)
+    session.commit()
+    session.refresh(db_user)
+    return db_user

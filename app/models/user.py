@@ -13,16 +13,19 @@ class User_Roles(str, Enum):
 
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+
     name: str = Field(nullable=False, max_length=100)
     email: str = Field(nullable=False, unique=True, index=True, max_length=100)
     password_hash: str = Field(nullable=False, max_length=255)
     phone_number: Optional[str] = Field(default=None, max_length=15)
     address: Optional[str] = Field(default=None, max_length=255)
+
     role: User_Roles = Field(
         default=User_Roles.customer,
         nullable=False,
         max_length=50,
     )
+
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc), nullable=False
     )
